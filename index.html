@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIPPP – Online Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,500;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --g900: #0a2e1a;
+            --g800: #0f3d22;
+            --g700: #155c30;
+            --g600: #1a7a3f;
+            --g500: #219150;
+            --g400: #2ebd6a;
+            --g300: #5dd68e;
+            --g200: #a8edca;
+            --g100: #e6f9ef;
+            --g50:  #f2fdf6;
+            --red:  #e05252;
+            --red-bg: #fff0f0;
+            --text: #0d1f13;
+            --text2: #4a6356;
+            --border: #d1ead9;
+            --card: #ffffff;
+            --bg: #f0f8f3;
+            --shadow: 0 2px 16px rgba(21,92,48,0.08);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'DM Sans',sans-serif; background:var(--bg); min-height:100vh; padding-bottom:96px; color:var(--text); }
+        ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-thumb{background:var(--g200);border-radius:99px}
+        .hidden{display:none!important}
+        .green{color:var(--g500)!important}
+        .red{color:var(--red)!important}
+
+        /* LOGIN */
+        #login{position:fixed;inset:0;z-index:1000;background:linear-gradient(150deg,var(--g900) 0%,var(--g700) 60%,var(--g500) 100%);display:flex;justify-content:center;align-items:center}
+        #login::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 30%,rgba(46,189,106,.18) 0%,transparent 60%),radial-gradient(ellipse at 20% 80%,rgba(46,189,106,.12) 0%,transparent 50%)}
+        .login-card{position:relative;background:rgba(255,255,255,.07);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);padding:48px 40px;border-radius:24px;width:90%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,.4);text-align:center}
+        .login-logo{width:64px;height:64px;background:var(--g400);border-radius:18px;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;box-shadow:0 8px 24px rgba(46,189,106,.4)}
+        .login-card h2{color:#fff;font-size:1.5rem;font-weight:700;margin-bottom:6px}
+        .login-card p{color:rgba(255,255,255,.55);font-size:.88rem;margin-bottom:28px}
+        .field{position:relative;margin-bottom:14px}
+        .field input{width:100%;padding:14px 16px 14px 44px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:var(--radius-sm);color:#fff;font-size:.95rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s,background .2s}
+        .field input::placeholder{color:rgba(255,255,255,.4)}
+        .field input:focus{border-color:var(--g400);background:rgba(255,255,255,.15)}
+        .field-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none}
+        .btn-primary{width:100%;padding:15px;background:linear-gradient(135deg,var(--g400),var(--g500));color:#fff;border:none;border-radius:var(--radius-sm);font-size:1rem;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:8px;box-shadow:0 4px 20px rgba(46,189,106,.4);transition:transform .15s,box-shadow .15s}
+        .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(46,189,106,.5)}
+        .btn-primary:active{transform:scale(.98)}
+        .login-err{color:#ff8a8a;font-size:.85rem;margin-top:12px;display:none;animation:shake .3s ease}
+        .login-err.show{display:block}
+        @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+        /* HEADER */
+        header{background:linear-gradient(90deg,var(--g900),var(--g800));color:#fff;padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 20px rgba(0,0,0,.2)}
+        .head-content{max-width:860px;margin:0 auto;height:60px;display:flex;align-items:center;gap:12px}
+        .head-logo{font-size:1.1rem;font-weight:700;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+        .head-logo span{background:var(--g400);color:var(--g900);padding:3px 9px;border-radius:6px;font-size:.8rem;font-weight:700}
+        .head-spacer{flex:1}
+        .user-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);padding:4px 12px;border-radius:99px;font-size:.82rem;color:rgba(255,255,255,.85)}
+        #syncStatus{font-size:.78rem;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:5px}
+        .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--g400);box-shadow:0 0 6px var(--g400);flex-shrink:0}
+        .sync-dot.off{background:var(--red);box-shadow:0 0 6px var(--red)}
+        .btn-exit{padding:7px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:500;font-family:'DM Sans',sans-serif;transition:background .2s;width:auto;margin-top:0}
+        .btn-exit:hover{background:rgba(255,255,255,.2)}
+
+        /* BOTTOM BAR */
+        .totals{position:fixed;bottom:0;left:0;right:0;background:var(--g900);padding:12px 20px;display:flex;justify-content:space-around;align-items:center;z-index:99;box-shadow:0 -4px 24px rgba(0,0,0,.25)}
+        .tot-item{text-align:center}
+        .tot-label{font-size:.62rem;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px}
+        .tot-value{font-size:1.1rem;font-weight:700;color:#fff;font-family:'DM Mono',monospace}
+        .tot-value.green{color:var(--g300)!important}
+        .tot-value.red{color:#ff8a8a!important}
+        .tot-divider{width:1px;height:32px;background:rgba(255,255,255,.1)}
+
+        /* MAIN */
+        .main{max-width:860px;margin:24px auto;padding:0 16px;display:none}
+        .main.active{display:block;animation:fadeUp .4s ease}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+        /* TABS */
+        .tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--card);padding:5px;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border)}
+        .tab{flex:1;padding:11px 8px;border:none;background:transparent;border-radius:12px;cursor:pointer;font-weight:600;color:var(--text2);font-size:.88rem;font-family:'DM Sans',sans-serif;transition:all .2s}
+        .tab:hover{background:var(--g100);color:var(--g600)}
+        .tab.active{background:linear-gradient(135deg,var(--g600),var(--g500));color:#fff;box-shadow:0 4px 12px rgba(33,145,80,.35)}
+
+        /* CONTENT */
+        .content{display:none}
+        .content.active{display:block;animation:fadeUp .3s ease}
+
+        /* CARD */
+        .card{background:var(--card);padding:24px;border-radius:var(--radius);margin-bottom:16px;box-shadow:var(--shadow);border:1px solid var(--border)}
+        .card-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+        .card-icon{width:36px;height:36px;background:var(--g100);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+        .card-title{font-size:1rem;font-weight:700;color:var(--g800)}
+        .card-sub{font-size:.8rem;color:var(--text2);margin-top:1px}
+
+        /* FORM */
+        label{display:block;font-size:.78rem;font-weight:700;color:var(--text2);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+        input[type=number],input[type=date],select,textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.95rem;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--g50);outline:none;transition:border-color .2s,box-shadow .2s}
+        input:focus,select:focus,textarea:focus{border-color:var(--g400);box-shadow:0 0 0 3px rgba(46,189,106,.15)}
+        select{cursor:pointer}
+        textarea{resize:vertical}
+
+        .radio-group{display:flex;gap:10px;margin:6px 0}
+        .radio-group input[type=radio]{display:none}
+        .radio-group label{flex:1;padding:14px;text-align:center;border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-weight:700;font-size:.9rem;transition:all .2s;margin:0;color:var(--text2);background:var(--g50);text-transform:none;letter-spacing:0}
+        .radio-group label:hover{border-color:var(--g300)}
+        .radio-group input:checked+label.ent{background:linear-gradient(135deg,var(--g500),var(--g400));color:#fff;border-color:var(--g500);box-shadow:0 4px 14px rgba(33,145,80,.3)}
+        .radio-group input:checked+label.usc{background:linear-gradient(135deg,#e05252,#f07070);color:#fff;border-color:var(--red);box-shadow:0 4px 14px rgba(224,82,82,.3)}
+
+        .btn-save{width:100%;padding:15px;background:linear-gradient(135deg,var(--g600),var(--g500));color:#fff;border:none;border-radius:var(--radius-sm);font-size:1rem;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:20px;box-shadow:0 4px 16px rgba(33,145,80,.35);transition:transform .15s,box-shadow .15s;letter-spacing:.3px}
+        .btn-save:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(33,145,80,.45)}
+        .btn-save:active{transform:scale(.98)}
+        .btn-reload{padding:10px 18px;background:var(--g50);border:1.5px solid var(--border);color:var(--text2);border-radius:var(--radius-sm);cursor:pointer;font-size:.88rem;font-weight:600;font-family:'DM Sans',sans-serif;margin-top:14px;width:auto;transition:all .2s}
+        .btn-reload:hover{background:var(--g100);border-color:var(--g300);color:var(--g700)}
+
+        /* STAT GRID */
+        .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+        .stat-box{background:var(--g50);border:1px solid var(--border);padding:18px 14px;border-radius:var(--radius-sm);text-align:center;transition:transform .2s}
+        .stat-box:hover{transform:translateY(-2px)}
+        .stat-box .val{font-size:1.2rem;font-weight:700;font-family:'DM Mono',monospace}
+        .stat-box .lab{font-size:.72rem;color:var(--text2);margin-top:5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+        .stat-box.accent{background:linear-gradient(135deg,var(--g700),var(--g600));border-color:var(--g700);grid-column:1/-1}
+        .stat-box.accent .val{color:#fff}
+        .stat-box.accent .lab{color:rgba(255,255,255,.65)}
+
+        /* PROGETTO ROW */
+        .prog-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+        .prog-row:last-child{border-bottom:none}
+        .prog-name{font-weight:600;font-size:.9rem}
+        .prog-saldo{font-size:.88rem;font-weight:700;font-family:'DM Mono',monospace}
+
+        /* FILTRO */
+        .filtro{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+        .filtro-btn{padding:7px 14px;border:1.5px solid var(--border);border-radius:99px;background:white;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all .2s;width:auto;margin-top:0}
+        .filtro-btn:hover{border-color:var(--g300);color:var(--g700);background:var(--g50)}
+        .filtro-btn.active{background:var(--g700);color:#fff;border-color:var(--g700)}
+
+        /* ITEMS */
+        .item{background:var(--g50);padding:16px;border-radius:var(--radius-sm);margin-bottom:10px;border:1px solid var(--border);border-left:4px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;transition:box-shadow .2s,transform .2s}
+        .item:hover{box-shadow:var(--shadow);transform:translateX(2px)}
+        .item.ent{border-left-color:var(--g500)}
+        .item.usc{border-left-color:var(--red)}
+        .item-title{font-weight:700;font-size:.95rem}
+        .badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:99px;font-size:.72rem;font-weight:700;margin-left:8px;vertical-align:middle}
+        .badge.ent-b{background:var(--g100);color:var(--g700)}
+        .badge.usc-b{background:var(--red-bg);color:var(--red)}
+        .item-desc{font-size:.83rem;color:var(--text2);margin-top:5px}
+        .meta-info{font-size:.72rem;color:#aab8b2;margin-top:4px}
+        .item-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0}
+        .item-amount{font-weight:700;font-family:'DM Mono',monospace;font-size:1rem;white-space:nowrap}
+        .btn-del{padding:5px 10px;background:transparent;border:1px solid #fccaca;color:var(--red);border-radius:7px;cursor:pointer;font-size:.78rem;font-family:'DM Sans',sans-serif;transition:all .2s;width:auto;margin-top:0}
+        .btn-del:hover{background:var(--red-bg)}
+
+        /* ALERT */
+        .alert{padding:13px 16px;border-radius:var(--radius-sm);margin-bottom:16px;display:none;font-weight:500;font-size:.9rem}
+        .alert.ok{background:var(--g100);color:var(--g700);border:1px solid var(--g200);display:block}
+        .alert.err{background:var(--red-bg);color:var(--red);border:1px solid #fccaca;display:block}
+
+        /* LOADING */
+        .loading{display:none;position:fixed;inset:0;background:rgba(10,46,26,.85);backdrop-filter:blur(4px);z-index:2000;justify-content:center;align-items:center;flex-direction:column;color:#fff}
+        .loading.active{display:flex}
+        .spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--g400);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:16px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .loading p{font-size:.9rem;color:rgba(255,255,255,.7)}
+
+        .divider{height:1px;background:var(--border);margin:4px 0 14px}
+        .empty{text-align:center;padding:32px 16px;color:var(--text2);font-size:.9rem}
+        .empty-icon{font-size:2.5rem;margin-bottom:10px}
+
+        /* STAFF BOX */
+        .staff-box{background:var(--g100);border:1.5px solid var(--g300);border-radius:var(--radius-sm);padding:14px;margin-top:10px;display:none}
+        .staff-box.show{display:block}
+        .staff-box-title{font-size:.72rem;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+        .loc-group{margin-bottom:10px}
+        .loc-label{font-size:.68rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+        .pills{display:flex;flex-wrap:wrap;gap:6px}
+        .pill{padding:5px 11px;background:#fff;border:1.5px solid var(--g200);border-radius:99px;font-size:.78rem;font-weight:600;color:var(--g800);cursor:pointer;transition:all .2s}
+        .pill:hover{background:var(--g500);color:#fff;border-color:var(--g500)}
+        .pill.selected{background:var(--g600);color:#fff;border-color:var(--g600);box-shadow:0 0 0 3px rgba(33,145,80,.25)}
+        .pill-supply{border-color:#f0c080;color:#7a5000;background:#fffbf0}
+        .pill-supply:hover{background:#e8960a;color:#fff;border-color:#e8960a}
+        .pill-supply.selected{background:#c97d00;color:#fff;border-color:#c97d00;box-shadow:0 0 0 3px rgba(200,125,0,.2)}
+        .expense-section-title{font-size:.72rem;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--g200)}
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+    <div class="login-card">
+        <div class="login-logo">🌿</div>
+        <h2>MIPPP</h2>
+        <p>Enter your credentials to access</p>
+        <div class="field"><span class="field-icon">✉️</span><input type="email" id="user" placeholder="Email" autocomplete="username"></div>
+        <div class="field"><span class="field-icon">🔑</span><input type="password" id="pass" placeholder="Password" autocomplete="current-password"></div>
+        <button class="btn-primary" onclick="accedi()">Sign In</button>
+        <div class="login-err" id="loginErr">Invalid credentials. Please try again.</div>
+    </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p id="loadingMsg">Syncing...</p>
+</div>
+
+<!-- HEADER -->
+<header id="header" class="hidden">
+    <div class="head-content">
+        <div class="head-logo">🌿 MIPPP <span>LIVE</span></div>
+        <div class="head-spacer"></div>
+        <span class="user-badge" id="utenteLabel">—</span>
+        <div id="syncStatus"><span class="sync-dot" id="syncDot"></span>online</div>
+        <button class="btn-exit" onclick="esci()">Sign Out</button>
+    </div>
+</header>
+
+<!-- BARRA TOTALE -->
+<div class="totals hidden" id="barraTot">
+    <div class="tot-item">
+        <div class="tot-label">Income</div>
+        <div class="tot-value green" id="tEnt">KSh 0</div>
+    </div>
+    <div class="tot-divider"></div>
+    <div class="tot-item">
+        <div class="tot-label">Expenses</div>
+        <div class="tot-value red" id="tUsc">KSh 0</div>
+    </div>
+    <div class="tot-divider"></div>
+    <div class="tot-item">
+        <div class="tot-label">Balance</div>
+        <div class="tot-value" id="tSal">KSh 0</div>
+    </div>
+    <div class="tot-divider"></div>
+    <div class="tot-item">
+        <div class="tot-label">No.</div>
+        <div class="tot-value" id="tNum">0</div>
+    </div>
+</div>
+
+<!-- APP -->
+<div class="main" id="app">
+    <div id="msg" class="alert"></div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="tab('home',this)">🏠 Home</button>
+        <button class="tab" onclick="tab('add',this)">＋ Add</button>
+        <button class="tab" onclick="tab('list',this)">📋 List</button>
+    </div>
+
+    <!-- HOME -->
+    <div id="home" class="content active">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📊</div>
+                <div><div class="card-title">MIPPP Summary</div><div class="card-sub">Data shared in real time</div></div>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-box"><div class="val green" id="hEnt">KSh 0</div><div class="lab">Total Income</div></div>
+                <div class="stat-box"><div class="val red" id="hUsc">KSh 0</div><div class="lab">Total Expenses</div></div>
+                <div class="stat-box accent"><div class="val" id="hSal">KSh 0</div><div class="lab">Current Balance</div></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📁</div>
+                <div class="card-title">By Project</div>
+            </div>
+            <div id="riepilogoProgetti"><div class="empty"><div class="empty-icon">📂</div>No data</div></div>
+        </div>
+    </div>
+
+    <!-- AGGIUNGI -->
+    <div id="add" class="content">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">✏️</div>
+                <div class="card-title">New Transaction</div>
+            </div>
+            <label>Project</label>
+            <select id="prog" onchange="staffUpdate()">
+                <option value="">Select project...</option>
+                <option value="Lchekuti">📚 Lchekuti Educational</option>
+                <option value="Nursery">🍼 Nursery</option>
+                <option value="Road">🛣️ Road for Poor</option>
+                <option value="Health">🏥 Health Morijo</option>
+            </select>
+            <label>Type</label>
+            <div class="radio-group">
+                <input type="radio" name="tipo" id="t1" value="Income" onchange="staffUpdate()">
+                <label for="t1" class="ent">📥 Income</label>
+                <input type="radio" name="tipo" id="t2" value="Expense" onchange="staffUpdate()">
+                <label for="t2" class="usc">📤 Expense</label>
+            </div>
+
+            <!-- STAFF BOX -->
+            <div class="staff-box" id="staffBox">
+                <div class="staff-box-title">👤 Seleziona un nome → poi premi 💾 Save</div>
+                <div id="staffPills"></div>
+            </div>
+            <label>Amount (KSh)</label>
+            <input type="number" id="imp" step="0.01" placeholder="0.00" min="0">
+            <label>Date</label>
+            <input type="date" id="dat">
+            <label>Description</label>
+            <textarea id="des" rows="3" placeholder="Transaction description..."></textarea>
+            <button class="btn-save" onclick="salva()">💾 Save Online</button>
+        </div>
+    </div>
+
+    <!-- LISTA -->
+    <div id="list" class="content">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📋</div>
+                <div class="card-title">Transaction History</div>
+            </div>
+            <div class="filtro">
+                <button class="filtro-btn active" onclick="setFiltro('',this)">All</button>
+                <button class="filtro-btn" onclick="setFiltro('Lchekuti',this)">📚 Lchekuti</button>
+                <button class="filtro-btn" onclick="setFiltro('Nursery',this)">🍼 Nursery</button>
+                <button class="filtro-btn" onclick="setFiltro('Road',this)">🛣️ Road</button>
+                <button class="filtro-btn" onclick="setFiltro('Health',this)">🏥 Health</button>
+            </div>
+            <div class="divider"></div>
+            <div id="elenco"></div>
+            <button class="btn-reload" onclick="carica()">🔄 Refresh</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const UTENTI = [
+        { email: 'amicipadrealdoodv@gmail.com', password: 'aldovettori', nome: 'Admin' },
+        { email: 'utente2@gmail.com',           password: 'password2',   nome: 'User 2' },
+    ];
+
+    const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/69c7fcb66860e0745bfc268f';
+    const JSONBIN_KEY = '$2a$10$mZ.qMlZMju3bJxDm7vY69u31zv0HwAPxAqBfdfa.Wn25oUJQ76coa';
+    const ICONE = { Lchekuti:'📚', Nursery:'🍼', Road:'🛣️', Health:'🏥' };
+
+    // Staff data by project → location → [name, amount, role]
+    const STAFF = {
+        Lchekuti: {
+            'Nkorika Village': [
+                ['MOSES LENTIIPO', 4000, 'Teacher'], ['SIMON LEWAO', 4000, 'Teacher'],
+                ['LEMAYIAN LENTUMUNAI', 4000, 'Teacher'], ['JAMES LESEEWA', 4000, 'Teacher'],
+                ['MATIBA LETOWON', 4000, 'Teacher'],
+            ],
+            'Soit Pus Village': [
+                ['PAUL LENTUMUNAI', 4000, 'Teacher'], ['MOSES LESUYAI', 4000, 'Teacher'],
+                ['JULIUS LEMETEKI', 4000, 'Teacher'], ['SELINA LETOLUAI', 4000, 'Teacher'],
+            ],
+            'Angata/Nkirenyi Village': [
+                ['THOMAS LELERUK', 4000, 'Teacher'], ['CHARLES LENAIDAMAA', 4000, 'Teacher'],
+                ['PHILIP LEMUNEN', 4000, 'Teacher'], ['SELINA LETOLUAI', 4000, 'Teacher'],
+            ],
+            'Marti Village': [
+                ['JOSEPHINE ALEPER', 4000, 'Teacher'],
+            ],
+            'Morijo Village': [
+                ['JOSEPHINE LEKERIAE', 5500, 'Teacher'], ['JULLIETTA LEKUMATO', 5500, 'Teacher'],
+            ],
+            'Cooks': [
+                ['ESTHER LEKESIKE', 4000, 'Cook'], ['CAROLINA LESIYAMPE', 5000, 'Cook'],
+            ],
+        },
+        Nursery: {
+            'Nkorika Village': [
+                ['RAPHAEL LEPANA', 4000, 'Teacher'], ['DICKSON LEMANTE', 4000, 'Teacher'],
+                ['MICHAEL LETIPILA', 4000, 'Teacher'], ['DAUDI LELESIIT', 4000, 'Teacher'],
+            ],
+            'Soit Pus Village': [
+                ['ISAAC LENKAAK', 4000, 'Teacher'], ['JAMES LEMEIKARI', 4000, 'Teacher'],
+                ['MOSES LENOLGISOI', 4000, 'Teacher'],
+            ],
+            'Angata/Nkirenyi Village': [
+                ['DAVID LENKIDI', 4000, 'Teacher'], ['THOMAS LENTIIPO', 4000, 'Teacher'],
+                ['JACOB LELEEJUK', 4000, 'Teacher'], ['JOHN LEKASUYIAN', 4000, 'Teacher'],
+            ],
+            'Morijo Village': [
+                ['ANYUNI LENTUMUNAI', 4000, 'Teacher'],
+            ],
+            'Cook': [
+                ['MARY MILANDI LENTUMUNAI', 4000, 'Cook'],
+            ],
+        },
+        Health: {
+            'Morijo Health': [
+                ['SARAFINA LETOWON', 4000, 'Laundry'], ['GRACIELLA NTIPANOI', 4000, 'Laundry'],
+                ['LESEYIA MARY', 5000, 'Cleaner'], ['SALIM LENTIMALEI', 45000, 'Nurse'],
+                ['FATHER AMBROSE', 6000, 'Dispensary'],
+            ],
+        },
+        Road: {
+            'Road to the Poors': [
+                ['AGNES LENTUMUNAI', 6000, 'House help'], ['JACKLINE NABIKI LESIRITE', 6000, 'Multi-purpose'],
+                ['LUCY LEKIRIAO', 9000, 'Kitchen'], ['CHRISTINE LELESIIT', 10000, 'Office'],
+                ['MARIANO LENGASAGILE', 5000, 'Office'], ['BONIFACE LESIRITE', 5000, 'Watchman'],
+                ['LUKAS LEKUMATO', 10000, 'Multi-purpose'], ['FATHER AMBROSE', 15000, 'Transportation'],
+            ],
+        },
+    };
+
+    // Non-staff expenses (supplies, food, etc.) by project → category → [item, amount]
+    const SUPPLIES = {
+        Lchekuti: {
+            'Food Program': [
+                ['MAIZE', 4800], ['BEANS', 8000], ['COOKING OIL', 3000], ['SALT', 250],
+            ],
+        },
+        Nursery: {
+            'Nursery Porridge': [
+                ['MAIZE FLOUR', 8000], ['SUGAR', 1800],
+            ],
+        },
+        Health: {},
+        Road: {},
+    };
+
+    function staffUpdate() {
+        const prog = document.getElementById('prog').value;
+        const tipoEl = document.querySelector('input[name="tipo"]:checked');
+        const box = document.getElementById('staffBox');
+        const pills = document.getElementById('staffPills');
+        if (!prog || !tipoEl || tipoEl.value !== 'Expense') {
+            box.classList.remove('show');
+            return;
+        }
+
+        let html = '';
+
+        // STAFF section
+        if (STAFF[prog] && Object.keys(STAFF[prog]).length) {
+            html += `<div class="expense-section-title">👷 Staff Payments</div>`;
+            html += Object.entries(STAFF[prog]).map(([loc, members]) => `
+                <div class="loc-group">
+                    <div class="loc-label">📍 ${loc}</div>
+                    <div class="pills">
+                        ${members.map(([n,a,r]) => `<div class="pill" data-name="${n}" data-amount="${a}" data-desc="Staff payment – ${n} (${r})" onclick="fillPill(this)">${n}</div>`).join('')}
+                    </div>
+                </div>`).join('');
+        }
+
+        // SUPPLIES section
+        if (SUPPLIES[prog] && Object.keys(SUPPLIES[prog]).length) {
+            html += `<div class="expense-section-title" style="margin-top:12px">🛒 Supplies & Other</div>`;
+            html += Object.entries(SUPPLIES[prog]).map(([cat, items]) => `
+                <div class="loc-group">
+                    <div class="loc-label">📦 ${cat}</div>
+                    <div class="pills">
+                        ${items.map(([n,a]) => `<div class="pill pill-supply" data-name="${n}" data-amount="${a}" data-desc="Supply – ${n}" onclick="fillPill(this)">${n}</div>`).join('')}
+                    </div>
+                </div>`).join('');
+        }
+
+        if (!html) { box.classList.remove('show'); return; }
+        pills.innerHTML = html;
+        box.classList.add('show');
+    }
+
+    function fillPill(el) {
+        document.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('imp').value = el.dataset.amount;
+        document.getElementById('des').value = el.dataset.desc;
+        document.querySelector('.btn-save').scrollIntoView({ behavior:'smooth', block:'center' });
+    }
+
+    let dati = [], filtroAttivo = '', utenteCorrente = null;
+
+    function accedi() {
+        const email = document.getElementById('user').value.trim().toLowerCase();
+        const pass  = document.getElementById('pass').value;
+        const utente = UTENTI.find(u => u.email.toLowerCase() === email && u.password === pass);
+        if (!utente) {
+            const err = document.getElementById('loginErr');
+            err.classList.add('show');
+            setTimeout(() => err.classList.remove('show'), 3000);
+            return;
+        }
+        utenteCorrente = utente;
+        document.getElementById('utenteLabel').textContent = '👤 ' + utente.nome;
+        document.getElementById('login').classList.add('hidden');
+        document.getElementById('header').classList.remove('hidden');
+        document.getElementById('barraTot').classList.remove('hidden');
+        document.getElementById('app').classList.add('active');
+        document.getElementById('dat').valueAsDate = new Date();
+        carica();
+    }
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !document.getElementById('login').classList.contains('hidden')) accedi();
+    });
+
+    function esci() { location.reload(); }
+
+    function tab(id, btn) {
+        document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    function setFiltro(val, btn) {
+        filtroAttivo = val;
+        document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderLista();
+    }
+
+    async function salva() {
+        const prog   = document.getElementById('prog').value;
+        const tipoEl = document.querySelector('input[name="tipo"]:checked');
+        const imp    = parseFloat(document.getElementById('imp').value);
+        const dat    = document.getElementById('dat').value;
+        const des    = document.getElementById('des').value.trim();
+        if (!prog || !tipoEl || isNaN(imp) || imp <= 0 || !dat || !des) {
+            messaggio('⚠️ Please fill in all fields correctly.', 'err'); return;
+        }
+        mostraLoading('Saving online...');
+        const nuovo = { id: Date.now(), progetto: prog, tipo: tipoEl.value, importo: imp, data: dat, descrizione: des, autore: utenteCorrente.nome, timestamp: new Date().toISOString() };
+        try {
+            const getRes = await fetch(JSONBIN_URL + '/latest', { headers: { 'X-Master-Key': JSONBIN_KEY } });
+            if (!getRes.ok) throw new Error('Read error');
+            const getData = await getRes.json();
+            const lista = getData.record?.transazioni || [];
+            lista.push(nuovo);
+            const putRes = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY }, body: JSON.stringify({ transazioni: lista }) });
+            if (!putRes.ok) throw new Error('Save error');
+            dati = lista;
+            dati.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            aggiorna();
+            document.getElementById('prog').value = '';
+            document.querySelectorAll('input[name="tipo"]').forEach(r => r.checked = false);
+            document.getElementById('imp').value = '';
+            document.getElementById('dat').valueAsDate = new Date();
+            document.getElementById('des').value = '';
+            document.getElementById('staffBox').classList.remove('show');
+            messaggio('✅ Saved online successfully!', 'ok');
+            tab('list', document.querySelectorAll('.tab')[2]);
+            setOnline(true);
+        } catch (err) { messaggio('❌ Error: ' + err.message, 'err'); setOnline(false); }
+        finally { nascondiLoading(); }
+    }
+
+    async function elimina(id) {
+        if (!confirm('Delete this transaction?')) return;
+        mostraLoading('Deleting...');
+        try {
+            const getRes = await fetch(JSONBIN_URL + '/latest', { headers: { 'X-Master-Key': JSONBIN_KEY } });
+            const getData = await getRes.json();
+            const lista = (getData.record?.transazioni || []).filter(t => t.id !== id);
+            const putRes = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY }, body: JSON.stringify({ transazioni: lista }) });
+            if (!putRes.ok) throw new Error('Delete error');
+            dati = lista;
+            aggiorna();
+            messaggio('🗑️ Transaction deleted.', 'ok');
+        } catch (err) { messaggio('❌ Error: ' + err.message, 'err'); }
+        finally { nascondiLoading(); }
+    }
+
+    async function carica() {
+        mostraLoading('Loading data...');
+        try {
+            const res = await fetch(JSONBIN_URL + '/latest', { headers: { 'X-Master-Key': JSONBIN_KEY } });
+            if (!res.ok) throw new Error('Server unreachable');
+            const json = await res.json();
+            dati = json.record?.transazioni || [];
+            dati.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            aggiorna();
+            setOnline(true);
+        } catch (e) { messaggio('❌ ' + e.message, 'err'); setOnline(false); }
+        finally { nascondiLoading(); }
+    }
+
+    function aggiorna() {
+        let ent = 0, usc = 0;
+        dati.forEach(t => t.tipo === 'Income' ? ent += t.importo : usc += t.importo);
+        const saldo = ent - usc;
+        const fmt = n => 'KSh ' + n.toLocaleString('en-US');
+
+        document.getElementById('tEnt').textContent = fmt(ent);
+        document.getElementById('hEnt').textContent = fmt(ent);
+        document.getElementById('tUsc').textContent = fmt(usc);
+        document.getElementById('hUsc').textContent = fmt(usc);
+        document.getElementById('tNum').textContent = dati.length;
+
+        ['tSal','hSal'].forEach(id => {
+            const el = document.getElementById(id);
+            el.textContent = fmt(saldo);
+            const base = id === 'tSal' ? 'tot-value' : 'val';
+            el.className = base + (saldo >= 0 ? ' green' : ' red');
+        });
+
+        const progetti = {};
+        dati.forEach(t => {
+            if (!progetti[t.progetto]) progetti[t.progetto] = { ent: 0, usc: 0 };
+            t.tipo === 'Income' ? progetti[t.progetto].ent += t.importo : progetti[t.progetto].usc += t.importo;
+        });
+
+        const rpEl = document.getElementById('riepilogoProgetti');
+        if (!Object.keys(progetti).length) {
+            rpEl.innerHTML = '<div class="empty"><div class="empty-icon">📂</div>No data available.</div>';
+        } else {
+            rpEl.innerHTML = Object.entries(progetti).map(([nome, v]) => {
+                const sal = v.ent - v.usc;
+                return `<div class="prog-row">
+                    <div>
+                        <span class="prog-name">${ICONE[nome]||'📁'} ${nome}</span>
+                        <div style="font-size:.74rem;margin-top:3px">
+                            <span style="color:var(--g500);font-weight:600">+KSh ${v.ent.toLocaleString()}</span>
+                            &nbsp;·&nbsp;
+                            <span style="color:var(--red);font-weight:600">-KSh ${v.usc.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    <span class="prog-saldo" style="color:${sal>=0?'var(--g500)':'var(--red)'}">${sal>=0?'+':'-'}KSh ${Math.abs(sal).toLocaleString()}</span>
+                </div>`;
+            }).join('');
+        }
+        renderLista();
+    }
+
+    function renderLista() {
+        const box = document.getElementById('elenco');
+        const filtrati = filtroAttivo ? dati.filter(t => t.progetto === filtroAttivo) : dati;
+        if (!filtrati.length) {
+            box.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div>No transactions found.</div>'; return;
+        }
+        box.innerHTML = filtrati.map(t => {
+            const isInc = t.tipo === 'Income';
+            return `
+            <div class="item ${isInc?'ent':'usc'}">
+                <div style="flex:1;min-width:0">
+                    <div class="item-title">${ICONE[t.progetto]||'📁'} ${t.progetto}<span class="badge ${isInc?'ent-b':'usc-b'}">${t.tipo}</span></div>
+                    <div class="item-desc">📅 ${t.data} &nbsp;·&nbsp; ${t.descrizione}</div>
+                    <div class="meta-info">👤 ${t.autore||'Admin'} &nbsp;·&nbsp; ${new Date(t.timestamp).toLocaleString('it-IT')}</div>
+                </div>
+                <div class="item-right">
+                    <span class="item-amount" style="color:${isInc?'var(--g500)':'var(--red)'}">${isInc?'+':'-'} KSh ${t.importo.toLocaleString()}</span>
+                    <button class="btn-del" onclick="elimina(${t.id})">🗑️ Delete</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function messaggio(txt, tipo) {
+        const m = document.getElementById('msg');
+        m.textContent = txt; m.className = 'alert ' + tipo;
+        setTimeout(() => m.className = 'alert', 4500);
+    }
+    function mostraLoading(msg) { document.getElementById('loadingMsg').textContent = msg||'Caricamento...'; document.getElementById('loading').classList.add('active'); }
+    function nascondiLoading() { document.getElementById('loading').classList.remove('active'); }
+    function setOnline(ok) {
+        document.getElementById('syncDot').className = 'sync-dot' + (ok ? '' : ' off');
+        document.getElementById('syncStatus').innerHTML = `<span class="sync-dot${ok?'':' off'}"></span>${ok?'online':'offline'}`;
+    }
+</script>
+</body>
+</html>
