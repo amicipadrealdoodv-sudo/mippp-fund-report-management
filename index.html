@@ -187,7 +187,7 @@
         .pill-supply.selected{background:#c97d00;color:#fff;border-color:#c97d00;box-shadow:0 0 0 3px rgba(200,125,0,.2)}
         .expense-section-title{font-size:.72rem;font-weight:700;color:var(--g700);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--g200)}
 
-        /* FILE UPLOAD STYLES */
+        /* FILE UPLOAD STYLES - MULTIFILE */
         .file-upload-area {
             border: 2px dashed var(--border);
             border-radius: var(--radius-sm);
@@ -206,7 +206,7 @@
             border-color: var(--g500);
             background: var(--g200);
         }
-        .file-upload-area.has-file {
+        .file-upload-area.has-files {
             border-color: var(--g500);
             background: linear-gradient(135deg, var(--g100), var(--g50));
         }
@@ -224,52 +224,75 @@
             font-size: .72rem;
             color: #8ba896;
         }
+        .file-upload-limit {
+            font-size: .7rem;
+            color: var(--g500);
+            margin-top: 4px;
+            font-weight: 600;
+        }
         .file-upload-input {
             display: none;
         }
-        .file-preview {
+        .files-list-container {
+            margin-top: 16px;
             display: none;
-            margin-top: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .files-list-container.show {
+            display: block;
+        }
+        .files-counter {
+            font-size: .8rem;
+            color: var(--text2);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .file-item-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
             padding: 12px;
             background: white;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border);
+            margin-bottom: 8px;
+            transition: all .2s;
         }
-        .file-preview.show {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+        .file-item-row:hover {
+            box-shadow: var(--shadow);
+            transform: translateX(2px);
         }
-        .file-preview-icon {
-            width: 48px;
-            height: 48px;
+        .file-item-icon {
+            width: 40px;
+            height: 40px;
             background: var(--g100);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             flex-shrink: 0;
         }
-        .file-preview-info {
+        .file-item-info {
             flex: 1;
             min-width: 0;
             text-align: left;
         }
-        .file-preview-name {
+        .file-item-name {
             font-weight: 600;
-            font-size: .9rem;
+            font-size: .88rem;
             color: var(--text);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .file-preview-size {
+        .file-item-size {
             font-size: .75rem;
             color: var(--text2);
             margin-top: 2px;
         }
-        .file-preview-remove {
+        .file-item-remove {
             padding: 6px 12px;
             background: var(--red-bg);
             border: 1px solid #fccaca;
@@ -281,17 +304,11 @@
             transition: all .2s;
             width: auto;
             margin-top: 0;
+            flex-shrink: 0;
         }
-        .file-preview-remove:hover {
+        .file-item-remove:hover {
             background: var(--red);
             color: white;
-        }
-        .file-preview-image {
-            max-width: 100%;
-            max-height: 150px;
-            border-radius: 8px;
-            margin-top: 12px;
-            border: 1px solid var(--border);
         }
         .upload-section {
             display: none;
@@ -344,6 +361,7 @@
             border-color: var(--g500);
         }
     </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -463,23 +481,19 @@
 
             <!-- FILE UPLOAD SECTION - Only shows for Expenses -->
             <div class="upload-section" id="uploadSection">
-                <label>📎 Attach Documents (PDF, Images)</label>
+                <label>📎 Attach Documents (PDF, Images) - Max 15 files</label>
                 <div class="file-upload-area" id="fileUploadArea" onclick="document.getElementById('fileInput').click()">
                     <div class="file-upload-icon">📁</div>
                     <div class="file-upload-text">Click or drag files here</div>
-                    <div class="file-upload-hint">PDF, JPG, PNG (max 5MB)</div>
+                    <div class="file-upload-hint">PDF, JPG, PNG (max 5MB each)</div>
+                    <div class="file-upload-limit">0/15 files selected</div>
                 </div>
                 <input type="file" id="fileInput" class="file-upload-input" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp" multiple onchange="handleFileSelect(event)">
 
-                <div class="file-preview" id="filePreview">
-                    <div class="file-preview-icon" id="previewIcon">📄</div>
-                    <div class="file-preview-info">
-                        <div class="file-preview-name" id="previewName">filename.pdf</div>
-                        <div class="file-preview-size" id="previewSize">2.5 MB</div>
-                    </div>
-                    <button class="file-preview-remove" onclick="removeFile()">✕ Remove</button>
+                <div class="files-list-container" id="filesListContainer">
+                    <div class="files-counter" id="filesCounter">Selected files: 0/15</div>
+                    <div id="filesList"></div>
                 </div>
-                <img class="file-preview-image" id="previewImage" alt="Preview">
             </div>
 
             <label>Amount (KSh)</label>
@@ -602,9 +616,10 @@
         Road: {},
     };
 
-    // File upload variables
+    // File upload variables - MULTIFILE SUPPORT
     let selectedFiles = [];
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    const MAX_FILES = 15; // Maximum 15 files
 
     function staffUpdate() {
         const prog = document.getElementById('prog').value;
@@ -618,7 +633,7 @@
             uploadSection.classList.add('show');
         } else {
             uploadSection.classList.remove('show');
-            removeFile();
+            removeAllFiles();
         }
 
         if (!prog || !tipoEl || tipoEl.value !== 'Expense') {
@@ -665,18 +680,22 @@
         document.querySelector('.btn-save').scrollIntoView({ behavior:'smooth', block:'center' });
     }
 
-    // File upload functions
+    // MULTIFILE UPLOAD FUNCTIONS
     function handleFileSelect(event) {
         const files = Array.from(event.target.files);
-        processFiles(files);
+        addFiles(files);
     }
 
-    function processFiles(files) {
-        selectedFiles = [];
+    function addFiles(files) {
+        // Check if adding these files would exceed the limit
+        if (selectedFiles.length + files.length > MAX_FILES) {
+            messaggio(`⚠️ Maximum ${MAX_FILES} files allowed. You already have ${selectedFiles.length} file(s).`, 'err');
+            return;
+        }
 
         files.forEach(file => {
             if (file.size > MAX_FILE_SIZE) {
-                messaggio(`⚠️ File "${file.name}" troppo grande (max 5MB)`, 'err');
+                messaggio(`⚠️ File "${file.name}" too large (max 5MB)`, 'err');
                 return;
             }
 
@@ -689,59 +708,60 @@
                     type: file.type,
                     data: base64Data
                 });
-                updateFilePreview();
+                updateFilesList();
             };
             reader.readAsDataURL(file);
         });
     }
 
-    function updateFilePreview() {
+    function updateFilesList() {
         const uploadArea = document.getElementById('fileUploadArea');
-        const preview = document.getElementById('filePreview');
-        const previewIcon = document.getElementById('previewIcon');
-        const previewName = document.getElementById('previewName');
-        const previewSize = document.getElementById('previewSize');
-        const previewImage = document.getElementById('previewImage');
+        const filesListContainer = document.getElementById('filesListContainer');
+        const filesList = document.getElementById('filesList');
+        const filesCounter = document.getElementById('filesCounter');
+        const uploadLimit = uploadArea.querySelector('.file-upload-limit');
 
+        // Update counter
+        filesCounter.textContent = `Selected files: ${selectedFiles.length}/${MAX_FILES}`;
+        uploadLimit.textContent = `${selectedFiles.length}/${MAX_FILES} files selected`;
+
+        // Show/hide list container
         if (selectedFiles.length === 0) {
-            uploadArea.classList.remove('has-file');
-            preview.classList.remove('show');
-            previewImage.style.display = 'none';
+            uploadArea.classList.remove('has-files');
+            filesListContainer.classList.remove('show');
+            document.querySelector('.file-upload-text').textContent = 'Click or drag files here';
             return;
         }
 
-        const file = selectedFiles[0]; // Show first file preview
+        uploadArea.classList.add('has-files');
+        filesListContainer.classList.add('show');
+        document.querySelector('.file-upload-text').textContent = 'Add more files (click or drag)';
 
-        uploadArea.classList.add('has-file');
-        preview.classList.add('show');
-        previewName.textContent = file.name;
-        previewSize.textContent = formatFileSize(file.size);
-
-        // Set icon based on file type
-        if (file.type.startsWith('image/')) {
-            previewIcon.textContent = '🖼️';
-            previewImage.src = file.data;
-            previewImage.style.display = 'block';
-        } else {
-            previewIcon.textContent = '📄';
-            previewImage.style.display = 'none';
-        }
-
-        // Update upload area text if multiple files
-        if (selectedFiles.length > 1) {
-            document.querySelector('.file-upload-text').textContent = `${selectedFiles.length} files selected`;
-        } else {
-            document.querySelector('.file-upload-text').textContent = '1 file selected';
-        }
+        // Render files list
+        filesList.innerHTML = selectedFiles.map((file, index) => {
+            const icon = file.type.startsWith('image/') ? '🖼️' : '📄';
+            return `
+                <div class="file-item-row">
+                    <div class="file-item-icon">${icon}</div>
+                    <div class="file-item-info">
+                        <div class="file-item-name">${file.name}</div>
+                        <div class="file-item-size">${formatFileSize(file.size)}</div>
+                    </div>
+                    <button class="file-item-remove" onclick="removeFile(${index})">✕ Remove</button>
+                </div>
+            `;
+        }).join('');
     }
 
-    function removeFile() {
+    function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        updateFilesList();
+    }
+
+    function removeAllFiles() {
         selectedFiles = [];
         document.getElementById('fileInput').value = '';
-        document.getElementById('fileUploadArea').classList.remove('has-file');
-        document.getElementById('filePreview').classList.remove('show');
-        document.getElementById('previewImage').style.display = 'none';
-        document.querySelector('.file-upload-text').textContent = 'Click or drag files here';
+        updateFilesList();
     }
 
     function formatFileSize(bytes) {
@@ -768,7 +788,7 @@
         e.preventDefault();
         uploadArea.classList.remove('dragover');
         const files = Array.from(e.dataTransfer.files);
-        processFiles(files);
+        addFiles(files);
     });
 
     let dati = [], filtroAttivo = '', utenteCorrente = null;
@@ -861,7 +881,7 @@
             document.getElementById('des').value = '';
             document.getElementById('staffBox').classList.remove('show');
             document.getElementById('uploadSection').classList.remove('show');
-            removeFile();
+            removeAllFiles();
 
             messaggio('✅ Saved online successfully!', 'ok');
             tab('list', document.querySelectorAll('.tab')[2]);
